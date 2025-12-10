@@ -3,8 +3,9 @@ SVG Иконки для DizainAI
 Векторные иконки вместо эмодзи для профессионального вида
 """
 
+import hashlib
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
-from PyQt5.QtCore import Qt, QSize, QRectF  # ← Изменено: QRect на QRectF
+from PyQt5.QtCore import Qt, QSize, QRectF
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QPushButton, QToolButton
 
@@ -237,12 +238,19 @@ class Icons:
     </svg>'''
 
     @classmethod
+    def _get_cache_key(cls, svg_template: str, color: str, size: int) -> str:
+        """Создать уникальный ключ кэша на основе хеша SVG"""
+        # Используем MD5 хеш SVG для уникального ключа
+        svg_hash = hashlib.md5(svg_template.encode()).hexdigest()[:16]
+        return f"{svg_hash}_{color}_{size}"
+
+    @classmethod
     def get_icon(cls, svg_template: str, color: str = None, size: int = 24) -> QIcon:
         """Создать QIcon из SVG шаблона"""
         if color is None:
             color = cls.COLOR_DEFAULT
 
-        cache_key = f"{svg_template[:50]}_{color}_{size}"
+        cache_key = cls._get_cache_key(svg_template, color, size)
         if cache_key in cls._cache:
             return cls._cache[cache_key]
 
@@ -256,7 +264,7 @@ class Icons:
         painter.setRenderHint(QPainter.Antialiasing)
 
         renderer = QSvgRenderer(bytearray(svg_data, encoding='utf-8'))
-        renderer.render(painter, QRectF(0, 0, size, size))  # ← ИСПРАВЛЕНО: QRectF
+        renderer.render(painter, QRectF(0, 0, size, size))
 
         painter.end()
 
@@ -280,7 +288,7 @@ class Icons:
         painter.setRenderHint(QPainter.Antialiasing)
 
         renderer = QSvgRenderer(bytearray(svg_data, encoding='utf-8'))
-        renderer.render(painter, QRectF(0, 0, size, size))  # ← ИСПРАВЛЕНО: QRectF
+        renderer.render(painter, QRectF(0, 0, size, size))
 
         painter.end()
 

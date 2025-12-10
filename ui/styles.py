@@ -180,41 +180,6 @@ QPushButton:disabled {{
     border-color: {COLORS['border']};
 }}
 
-/* Основная кнопка */
-QPushButton#primaryButton,
-QPushButton[variant="primary"] {{
-    background-color: {COLORS['accent']};
-    border: none;
-    color: white;
-    font-weight: 600;
-}}
-
-QPushButton#primaryButton:hover,
-QPushButton[variant="primary"]:hover {{
-    background-color: {COLORS['accent_hover']};
-}}
-
-/* Кнопка успеха */
-QPushButton#successButton,
-QPushButton[variant="success"] {{
-    background-color: {COLORS['success']};
-    border: none;
-    color: white;
-}}
-
-QPushButton#successButton:hover,
-QPushButton[variant="success"]:hover {{
-    background-color: {COLORS['success_muted']};
-}}
-
-/* Кнопка опасности */
-QPushButton#dangerButton,
-QPushButton[variant="danger"] {{
-    background-color: {COLORS['danger']};
-    border: none;
-    color: white;
-}}
-
 /* ============================================
    ПОЛЯ ВВОДА
    ============================================ */
