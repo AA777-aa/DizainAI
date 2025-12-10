@@ -329,17 +329,16 @@ QGroupBox {{
     padding-top: 24px;
 }}
 
-QGroupBox::title {{
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    left: 16px;
-    top: 8px;
-    color: {COLORS['text_secondary']};
-    font-weight: 600;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}}
+    QGroupBox::title {{
+        subcontrol-origin: margin;
+        subcontrol-position: top left;
+        left: 16px;
+        top: 8px;
+        color: {COLORS['text_secondary']};
+        font-weight: 600;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }}
 
 /* ============================================
    СПИСКИ
@@ -550,7 +549,6 @@ QMessageBox {{
 #statTitle {{
     color: {COLORS['text_muted']};
     font-size: 11px;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }}
 

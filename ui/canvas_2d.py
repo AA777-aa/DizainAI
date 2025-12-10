@@ -524,10 +524,11 @@ class Canvas2D(QWidget):
 
         if self.is_panning:
             delta = event.pos() - self.last_mouse_pos
-            self.offset_x += delta.x()
-            self.offset_y -= delta.y()
-            self.last_mouse_pos = event.pos()
-            self.update()
+            if not delta.isNull():
+                self.offset_x += delta.x()
+                self.offset_y -= delta.y()
+                self.last_mouse_pos = event.pos()
+                self.update()
 
         elif self.is_dragging and self.selected_room_id:
             # Перемещение комнаты
@@ -536,22 +537,25 @@ class Canvas2D(QWidget):
                 dx = wx - self.drag_start_pos[0]
                 dy = wy - self.drag_start_pos[1]
 
-                for wall in room.walls:
-                    wall.start.x += dx
-                    wall.start.y += dy
-                    wall.end.x += dx
-                    wall.end.y += dy
+                if dx or dy:
+                    for wall in room.walls:
+                        wall.start.x += dx
+                        wall.start.y += dy
+                        wall.end.x += dx
+                        wall.end.y += dy
 
-                self.drag_start_pos = (wx, wy)
-                self.update()
+                    self.drag_start_pos = (wx, wy)
+                    self.update()
 
         elif self.is_resizing:
-            self._resize_room(wx, wy)
-            self.update()
+            if self._resize_room(wx, wy):
+                self.update()
 
         elif self.is_drawing:
-            self.draw_current_pos = (wx, wy)
-            self.update()
+            new_pos = (wx, wy)
+            if new_pos != self.draw_current_pos:
+                self.draw_current_pos = new_pos
+                self.update()
 
         else:
             # Проверяем наведение на маркеры
@@ -709,11 +713,11 @@ class Canvas2D(QWidget):
         self.draw_current_pos = None
         self.update()
 
-    def _resize_room(self, wx: float, wy: float):
+    def _resize_room(self, wx: float, wy: float) -> bool:
         """Изменение размера комнаты через маркеры"""
         room = self.project.get_room_by_id(self.selected_room_id)
         if not room:
-            return
+            return False
 
         # Привязка к сетке
         wx, wy = self.snap_to_grid(wx, wy)
@@ -727,38 +731,49 @@ class Canvas2D(QWidget):
         # Изменяем в зависимости от маркера
         handle = self.hovered_handle
 
+        changed = False
+
         if handle in (SelectionHandle.LEFT, SelectionHandle.TOP_LEFT, SelectionHandle.BOTTOM_LEFT):
             new_min_x = min(wx, max_x - 500)
-            delta = new_min_x - min_x
-            for wall in room.walls:
-                if wall.start.x == min_x:
-                    wall.start.x = new_min_x
-                if wall.end.x == min_x:
-                    wall.end.x = new_min_x
+            if new_min_x != min_x:
+                for wall in room.walls:
+                    if wall.start.x == min_x:
+                        wall.start.x = new_min_x
+                    if wall.end.x == min_x:
+                        wall.end.x = new_min_x
+                changed = True
 
         if handle in (SelectionHandle.RIGHT, SelectionHandle.TOP_RIGHT, SelectionHandle.BOTTOM_RIGHT):
             new_max_x = max(wx, min_x + 500)
-            for wall in room.walls:
-                if wall.start.x == max_x:
-                    wall.start.x = new_max_x
-                if wall.end.x == max_x:
-                    wall.end.x = new_max_x
+            if new_max_x != max_x:
+                for wall in room.walls:
+                    if wall.start.x == max_x:
+                        wall.start.x = new_max_x
+                    if wall.end.x == max_x:
+                        wall.end.x = new_max_x
+                changed = True
 
         if handle in (SelectionHandle.TOP, SelectionHandle.TOP_LEFT, SelectionHandle.TOP_RIGHT):
             new_max_y = max(wy, min_y + 500)
-            for wall in room.walls:
-                if wall.start.y == max_y:
-                    wall.start.y = new_max_y
-                if wall.end.y == max_y:
-                    wall.end.y = new_max_y
+            if new_max_y != max_y:
+                for wall in room.walls:
+                    if wall.start.y == max_y:
+                        wall.start.y = new_max_y
+                    if wall.end.y == max_y:
+                        wall.end.y = new_max_y
+                changed = True
 
         if handle in (SelectionHandle.BOTTOM, SelectionHandle.BOTTOM_LEFT, SelectionHandle.BOTTOM_RIGHT):
             new_min_y = min(wy, max_y - 500)
-            for wall in room.walls:
-                if wall.start.y == min_y:
-                    wall.start.y = new_min_y
-                if wall.end.y == min_y:
-                    wall.end.y = new_min_y
+            if new_min_y != min_y:
+                for wall in room.walls:
+                    if wall.start.y == min_y:
+                        wall.start.y = new_min_y
+                    if wall.end.y == min_y:
+                        wall.end.y = new_min_y
+                changed = True
+
+        return changed
 
     def _add_door_at(self, wx: float, wy: float):
         """Добавить дверь на ближайшую стену"""
