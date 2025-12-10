@@ -1,15 +1,15 @@
 """
-Главное окно приложения DizainAI
+Главное окно приложения DizainAI - Современный дизайн
 """
 
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QSplitter, QTabWidget, QMenuBar, QMenu, QAction,
     QToolBar, QStatusBar, QFileDialog, QMessageBox,
-    QLabel, QDockWidget
+    QLabel, QFrame, QSizePolicy
 )
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon, QKeySequence
+from PyQt5.QtGui import QIcon, QKeySequence, QFont
 
 from config.settings import Settings
 from core.project import Project
@@ -41,160 +41,188 @@ class MainWindow(QMainWindow):
     def _setup_ui(self):
         """Настройка интерфейса"""
         self.setWindowTitle("DizainAI - Дизайн интерьера")
-        self.setMinimumSize(1200, 800)
-        self.resize(1400, 900)
+        self.setMinimumSize(1280, 800)
+        self.resize(1500, 950)
 
         # Центральный виджет
         central = QWidget()
         self.setCentralWidget(central)
 
-        layout = QHBoxLayout(central)
-        layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = QHBoxLayout(central)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # Главный сплиттер
+        # === Главный сплиттер ===
         splitter = QSplitter(Qt.Horizontal)
-        layout.addWidget(splitter)
+        splitter.setChildrenCollapsible(False)
+        main_layout.addWidget(splitter)
 
-        # Левая панель - 2D/3D вид
-        view_tabs = QTabWidget()
+        # === ЛЕВАЯ ЧАСТЬ: Рабочая область ===
+        workspace = QWidget()
+        workspace_layout = QVBoxLayout(workspace)
+        workspace_layout.setContentsMargins(10, 10, 5, 10)
+        workspace_layout.setSpacing(0)
+
+        # Вкладки 2D/3D
+        self.view_tabs = QTabWidget()
+        self.view_tabs.setDocumentMode(True)
 
         # 2D Canvas
         self.canvas_2d = Canvas2D(self.project)
-        view_tabs.addTab(self.canvas_2d, "2D План")
+        self.view_tabs.addTab(self.canvas_2d, "📐  2D План")
 
         # 3D Viewport
         self.viewport_3d = Viewport3D(self.project)
-        view_tabs.addTab(self.viewport_3d, "3D Вид")
+        self.view_tabs.addTab(self.viewport_3d, "🏠  3D Просмотр")
 
-        splitter.addWidget(view_tabs)
+        workspace_layout.addWidget(self.view_tabs)
+        splitter.addWidget(workspace)
 
-        # Правая панель - вкладки инструментов
-        right_tabs = QTabWidget()
-        right_tabs.setMaximumWidth(400)
-        right_tabs.setMinimumWidth(300)
+        # === ПРАВАЯ ЧАСТЬ: Панели инструментов ===
+        right_panel = QWidget()
+        right_panel.setMaximumWidth(420)
+        right_panel.setMinimumWidth(360)
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(5, 10, 10, 10)
+        right_layout.setSpacing(0)
+
+        # Вкладки инструментов
+        self.tool_tabs = QTabWidget()
 
         # Панель свойств
         self.properties_panel = PropertiesPanel(self.project)
-        right_tabs.addTab(self.properties_panel, "Свойства")
+        self.tool_tabs.addTab(self.properties_panel, "📋  Проект")
 
         # AI панель
         self.ai_panel = AIPanel(self.settings, self.project)
-        right_tabs.addTab(self.ai_panel, "AI Дизайнер")
+        self.tool_tabs.addTab(self.ai_panel, "🤖  AI Дизайн")
 
         # Панель материалов
         self.materials_panel = MaterialsPanel(self.project)
-        right_tabs.addTab(self.materials_panel, "Материалы")
+        self.tool_tabs.addTab(self.materials_panel, "🧱  Материалы")
 
-        splitter.addWidget(right_tabs)
+        right_layout.addWidget(self.tool_tabs)
+        splitter.addWidget(right_panel)
 
         # Пропорции сплиттера
-        splitter.setSizes([900, 350])
+        splitter.setSizes([1050, 400])
 
     def _create_menus(self):
         """Создание меню"""
         menubar = self.menuBar()
 
-        # Файл
-        file_menu = menubar.addMenu("&Файл")
+        # === Файл ===
+        file_menu = menubar.addMenu("Файл")
 
-        new_action = QAction("&Новый проект", self)
+        new_action = QAction("🆕  Новый проект", self)
         new_action.setShortcut(QKeySequence.New)
         new_action.triggered.connect(self._new_project)
         file_menu.addAction(new_action)
 
-        open_action = QAction("&Открыть...", self)
+        open_action = QAction("📂  Открыть...", self)
         open_action.setShortcut(QKeySequence.Open)
         open_action.triggered.connect(self._open_project)
         file_menu.addAction(open_action)
 
-        save_action = QAction("&Сохранить", self)
+        file_menu.addSeparator()
+
+        save_action = QAction("💾  Сохранить", self)
         save_action.setShortcut(QKeySequence.Save)
         save_action.triggered.connect(self._save_project)
         file_menu.addAction(save_action)
 
-        save_as_action = QAction("Сохранить &как...", self)
+        save_as_action = QAction("💾  Сохранить как...", self)
         save_as_action.setShortcut(QKeySequence.SaveAs)
         save_as_action.triggered.connect(self._save_project_as)
         file_menu.addAction(save_as_action)
 
         file_menu.addSeparator()
 
-        export_menu = file_menu.addMenu("&Экспорт")
-        export_txt = QAction("Текстовый отчёт...", self)
+        # Подменю экспорта
+        export_menu = file_menu.addMenu("📤  Экспорт")
+
+        export_txt = QAction("📄  Текстовый отчёт...", self)
         export_txt.triggered.connect(self._export_text)
         export_menu.addAction(export_txt)
 
-        export_csv = QAction("Материалы (CSV)...", self)
+        export_csv = QAction("📊  Материалы (CSV)...", self)
         export_csv.triggered.connect(self._export_csv)
         export_menu.addAction(export_csv)
 
         file_menu.addSeparator()
 
-        exit_action = QAction("&Выход", self)
+        exit_action = QAction("🚪  Выход", self)
         exit_action.setShortcut(QKeySequence.Quit)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
-        # Правка
-        edit_menu = menubar.addMenu("&Правка")
+        # === Комната ===
+        room_menu = menubar.addMenu("Комната")
 
-        undo_action = QAction("&Отменить", self)
-        undo_action.setShortcut(QKeySequence.Undo)
-        edit_menu.addAction(undo_action)
-
-        redo_action = QAction("&Повторить", self)
-        redo_action.setShortcut(QKeySequence.Redo)
-        edit_menu.addAction(redo_action)
-
-        # Комната
-        room_menu = menubar.addMenu("&Комната")
-
-        add_room_action = QAction("&Добавить комнату...", self)
+        add_room_action = QAction("➕  Добавить комнату...", self)
         add_room_action.setShortcut("Ctrl+R")
-        add_room_action.triggered.connect(self._add_room)
+        add_room_action.triggered.connect(self._add_rectangular_room)
         room_menu.addAction(add_room_action)
 
-        add_rect_room = QAction("Добавить &прямоугольную...", self)
-        add_rect_room.triggered.connect(self._add_rectangular_room)
-        room_menu.addAction(add_rect_room)
+        # === Настройки ===
+        settings_menu = menubar.addMenu("Настройки")
 
-        # Настройки
-        settings_menu = menubar.addMenu("&Настройки")
-
-        settings_action = QAction("&Параметры...", self)
+        settings_action = QAction("⚙️  Параметры...", self)
         settings_action.triggered.connect(self._show_settings)
         settings_menu.addAction(settings_action)
 
-        # Справка
-        help_menu = menubar.addMenu("&Справка")
+        # === Справка ===
+        help_menu = menubar.addMenu("Справка")
 
-        about_action = QAction("&О программе", self)
+        about_action = QAction("ℹ️  О программе", self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
 
     def _create_toolbar(self):
         """Создание панели инструментов"""
-        toolbar = QToolBar("Основная")
+        toolbar = QToolBar("Главная")
         toolbar.setIconSize(QSize(24, 24))
+        toolbar.setMovable(False)
+        toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.addToolBar(toolbar)
 
-        toolbar.addAction("📄 Новый", self._new_project)
-        toolbar.addAction("📂 Открыть", self._open_project)
-        toolbar.addAction("💾 Сохранить", self._save_project)
+        # Кнопки с понятными текстами
+        new_btn = toolbar.addAction("📄 Новый")
+        new_btn.triggered.connect(self._new_project)
+        new_btn.setToolTip("Создать новый проект (Ctrl+N)")
+
+        open_btn = toolbar.addAction("📂 Открыть")
+        open_btn.triggered.connect(self._open_project)
+        open_btn.setToolTip("Открыть проект (Ctrl+O)")
+
+        save_btn = toolbar.addAction("💾 Сохранить")
+        save_btn.triggered.connect(self._save_project)
+        save_btn.setToolTip("Сохранить проект (Ctrl+S)")
+
         toolbar.addSeparator()
-        toolbar.addAction("🏠 Добавить комнату", self._add_rectangular_room)
+
+        add_room_btn = toolbar.addAction("🏠 Добавить комнату")
+        add_room_btn.triggered.connect(self._add_rectangular_room)
+        add_room_btn.setToolTip("Добавить новую комнату (Ctrl+R)")
+
         toolbar.addSeparator()
-        toolbar.addAction("⚙️ Настройки", self._show_settings)
+
+        settings_btn = toolbar.addAction("⚙️ Настройки")
+        settings_btn.triggered.connect(self._show_settings)
+        settings_btn.setToolTip("Открыть настройки")
 
     def _create_statusbar(self):
         """Создание строки состояния"""
         self.statusbar = QStatusBar()
         self.setStatusBar(self.statusbar)
 
-        self.status_label = QLabel("Готов")
+        # Левая часть - статус
+        self.status_label = QLabel("✅ Готов к работе")
         self.statusbar.addWidget(self.status_label)
 
-        self.area_label = QLabel("")
+        # Правая часть - информация о проекте
+        self.area_label = QLabel()
+        self.area_label.setStyleSheet("font-weight: bold; color: #10b981;")
         self.statusbar.addPermanentWidget(self.area_label)
 
         self._update_status()
@@ -209,8 +237,9 @@ class MainWindow(QMainWindow):
         rooms_count = len(self.project.rooms)
         total_area = self.project.total_area
 
+        rooms_text = "комната" if rooms_count == 1 else "комнат"
         self.area_label.setText(
-            f"Комнат: {rooms_count} | Площадь: {total_area:.1f} м²"
+            f"🏠 {rooms_count} {rooms_text}  |  📐 {total_area:.1f} м²"
         )
 
     def _refresh_all(self):
@@ -236,7 +265,7 @@ class MainWindow(QMainWindow):
         """Новый проект"""
         reply = QMessageBox.question(
             self, "Новый проект",
-            "Создать новый проект? Несохранённые изменения будут потеряны.",
+            "Создать новый проект?\n\nНесохранённые изменения будут потеряны.",
             QMessageBox.Yes | QMessageBox.No
         )
 
@@ -244,12 +273,13 @@ class MainWindow(QMainWindow):
             self.project = Project(name="Новый проект")
             self._refresh_all()
             self.setWindowTitle("DizainAI - Новый проект")
+            self.status_label.setText("🆕 Создан новый проект")
 
     def _open_project(self):
         """Открыть проект"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Открыть проект",
-            "", "DizainAI проекты (*.dizain);;Все файлы (*)"
+            self, "Открыть проект", "",
+            "DizainAI проекты (*.dizain);;Все файлы (*)"
         )
 
         if file_path:
@@ -257,7 +287,7 @@ class MainWindow(QMainWindow):
                 self.project = Project.load(file_path)
                 self._refresh_all()
                 self.setWindowTitle(f"DizainAI - {self.project.name}")
-                self.statusbar.showMessage(f"Открыт: {file_path}", 3000)
+                self.status_label.setText(f"📂 Открыт: {self.project.name}")
             except Exception as e:
                 QMessageBox.critical(
                     self, "Ошибка",
@@ -269,7 +299,7 @@ class MainWindow(QMainWindow):
         if self.project.file_path:
             try:
                 self.project.save()
-                self.statusbar.showMessage("Сохранено", 2000)
+                self.status_label.setText("💾 Проект сохранён")
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Ошибка сохранения:\n{e}")
         else:
@@ -287,7 +317,7 @@ class MainWindow(QMainWindow):
             try:
                 self.project.save(file_path)
                 self.setWindowTitle(f"DizainAI - {self.project.name}")
-                self.statusbar.showMessage(f"Сохранено: {file_path}", 3000)
+                self.status_label.setText(f"💾 Сохранено: {file_path}")
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Ошибка сохранения:\n{e}")
 
@@ -303,7 +333,7 @@ class MainWindow(QMainWindow):
 
         if file_path:
             if ProjectExporter.to_text_report(self.project, file_path):
-                self.statusbar.showMessage(f"Экспортировано: {file_path}", 3000)
+                self.status_label.setText(f"📤 Экспортировано: {file_path}")
 
     def _export_csv(self):
         """Экспорт материалов в CSV"""
@@ -317,41 +347,43 @@ class MainWindow(QMainWindow):
 
         if file_path:
             if ProjectExporter.to_csv_materials(self.project, file_path):
-                self.statusbar.showMessage(f"Экспортировано: {file_path}", 3000)
+                self.status_label.setText(f"📤 Экспортировано: {file_path}")
 
-    def _add_room(self):
-        """Добавить комнату через диалог"""
+    def _add_rectangular_room(self):
+        """Добавление комнаты"""
         dialog = RoomDialog(self)
         if dialog.exec_():
             room = dialog.get_room()
-            self.project.add_room(room)
-            self._refresh_all()
-
-    def _add_rectangular_room(self):
-        """Быстрое добавление прямоугольной комнаты"""
-        dialog = RoomDialog(self, rectangular=True)
-        if dialog.exec_():
-            room = dialog.get_room()
-            self.project.add_room(room)
-            self._refresh_all()
+            if room:
+                self.project.add_room(room)
+                self._refresh_all()
+                self.status_label.setText(f"🏠 Добавлена комната: {room.name}")
 
     def _show_settings(self):
         """Показать настройки"""
         dialog = SettingsDialog(self.settings, self)
-        dialog.exec_()
+        if dialog.exec_():
+            # Обновляем AI панель при изменении настроек
+            self.ai_panel._init_ai()
 
     def _show_about(self):
         """О программе"""
         QMessageBox.about(
             self, "О программе DizainAI",
-            "<h2>DizainAI</h2>"
-            "<p>Версия 1.0.0</p>"
-            "<p>Программа для дизайна интерьера с AI-ассистентом.</p>"
-            "<p>Возможности:</p>"
-            "<ul>"
-            "<li>Создание 2D планов помещений</li>"
-            "<li>3D визуализация</li>"
-            "<li>AI-генерация дизайн-идей</li>"
-            "<li>Расчёт строительных материалов</li>"
-            "</ul>"
+            """
+            <div style="text-align: center;">
+            <h2 style="color: #4f46e5;">🏠 DizainAI</h2>
+            <p style="font-size: 14px;">Версия 1.0.0</p>
+            <hr>
+            <p>Программа для дизайна интерьера<br>с AI-ассистентом</p>
+            <br>
+            <b>Возможности:</b>
+            <ul style="text-align: left;">
+            <li>📐 Создание 2D планов помещений</li>
+            <li>🏠 3D визуализация</li>
+            <li>🤖 AI-генерация дизайн-идей</li>
+            <li>🧱 Расчёт строительных материалов</li>
+            </ul>
+            </div>
+            """
         )

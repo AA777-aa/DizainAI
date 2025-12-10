@@ -1,14 +1,15 @@
 """
-Панель расчёта материалов
+Панель расчёта материалов - современный дизайн
 """
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QGroupBox, QTextEdit, QTableWidget,
     QTableWidgetItem, QHeaderView, QTabWidget,
-    QFileDialog, QMessageBox
+    QFileDialog, QMessageBox, QFrame
 )
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
 from core.project import Project
 from core.materials_calc import MaterialsCalculator
@@ -26,24 +27,48 @@ class MaterialsPanel(QWidget):
     def _setup_ui(self):
         """Настройка интерфейса"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(15)
 
-        # Заголовок
-        header = QLabel("🧱 Расчёт строительных материалов")
-        header.setStyleSheet("font-size: 14px; font-weight: bold;")
-        layout.addWidget(header)
+        # === ИНФОРМАЦИЯ О ПРОЕКТЕ ===
+        info_frame = QFrame()
+        info_frame.setStyleSheet("""
+            QFrame {
+                background-color: #1f2937;
+                border-radius: 10px;
+                padding: 15px;
+            }
+        """)
+        info_layout = QVBoxLayout(info_frame)
+        info_layout.setSpacing(8)
 
-        # Информация о проекте
+        header = QLabel("🧱 Расчёт материалов")
+        header.setStyleSheet("font-size: 16px; font-weight: bold; color: #f8fafc;")
+        info_layout.addWidget(header)
+
         self.info_label = QLabel()
-        self.info_label.setWordWrap(True)
-        layout.addWidget(self.info_label)
+        self.info_label.setStyleSheet("color: #94a3b8;")
+        info_layout.addWidget(self.info_label)
 
-        # Кнопка расчёта
-        calc_btn = QPushButton("📊 Рассчитать материалы")
+        layout.addWidget(info_frame)
+
+        # === КНОПКА РАСЧЁТА ===
+        calc_btn = QPushButton("📊  Рассчитать материалы")
+        calc_btn.setMinimumHeight(50)
+        calc_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #10b981;
+                font-size: 15px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+            }
+        """)
         calc_btn.clicked.connect(self._calculate)
         layout.addWidget(calc_btn)
 
-        # Вкладки с результатами
+        # === РЕЗУЛЬТАТЫ ===
         self.tabs = QTabWidget()
 
         # Таблица
@@ -53,6 +78,8 @@ class MaterialsPanel(QWidget):
             "Материал", "Кол-во", "Ед.", "С запасом", "Примечание"
         ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+        self.table.setAlternatingRowColors(True)
         self.tabs.addTab(self.table, "📋 Таблица")
 
         # Текстовый отчёт
@@ -60,12 +87,13 @@ class MaterialsPanel(QWidget):
         self.text_report.setReadOnly(True)
         self.tabs.addTab(self.text_report, "📝 Отчёт")
 
-        layout.addWidget(self.tabs)
+        layout.addWidget(self.tabs, 1)
 
-        # Кнопки экспорта
-        export_layout = QHBoxLayout()
+        # === ЭКСПОРТ ===
+        export_group = QGroupBox("Экспорт")
+        export_layout = QHBoxLayout(export_group)
 
-        export_txt_btn = QPushButton("💾 Экспорт TXT")
+        export_txt_btn = QPushButton("📄 Экспорт TXT")
         export_txt_btn.clicked.connect(self._export_txt)
         export_layout.addWidget(export_txt_btn)
 
@@ -73,7 +101,7 @@ class MaterialsPanel(QWidget):
         export_csv_btn.clicked.connect(self._export_csv)
         export_layout.addWidget(export_csv_btn)
 
-        layout.addLayout(export_layout)
+        layout.addWidget(export_group)
 
         self._update_info()
 
@@ -90,8 +118,7 @@ class MaterialsPanel(QWidget):
 
         self.info_label.setText(
             f"📁 Проект: {self.project.name}\n"
-            f"🏠 Комнат: {rooms}\n"
-            f"📐 Общая площадь: {area:.2f} м²"
+            f"🏠 Комнат: {rooms}   |   📐 Площадь: {area:.1f} м²"
         )
 
     def _clear_results(self):
@@ -103,8 +130,8 @@ class MaterialsPanel(QWidget):
         """Рассчитать материалы"""
         if not self.project.rooms:
             QMessageBox.warning(
-                self, "Ошибка",
-                "Добавьте хотя бы одну комнату для расчёта."
+                self, "Нет комнат",
+                "Добавьте хотя бы одну комнату для расчёта материалов."
             )
             return
 
@@ -130,7 +157,7 @@ class MaterialsPanel(QWidget):
             # Заголовок категории
             self.table.insertRow(row)
             header_item = QTableWidgetItem(category_names.get(category, category))
-            header_item.setBackground(Qt.lightGray)
+            header_item.setBackground(Qt.darkGray)
             font = header_item.font()
             font.setBold(True)
             header_item.setFont(font)
@@ -144,7 +171,11 @@ class MaterialsPanel(QWidget):
                 self.table.setItem(row, 0, QTableWidgetItem(mat.name))
                 self.table.setItem(row, 1, QTableWidgetItem(f"{mat.quantity}"))
                 self.table.setItem(row, 2, QTableWidgetItem(mat.unit))
-                self.table.setItem(row, 3, QTableWidgetItem(f"{mat.with_reserve}"))
+
+                reserve_item = QTableWidgetItem(f"{mat.with_reserve}")
+                reserve_item.setForeground(Qt.green)
+                self.table.setItem(row, 3, reserve_item)
+
                 self.table.setItem(row, 4, QTableWidgetItem(mat.notes))
                 row += 1
 
@@ -162,10 +193,7 @@ class MaterialsPanel(QWidget):
 
         if file_path:
             if ProjectExporter.to_text_report(self.project, file_path):
-                QMessageBox.information(
-                    self, "Успех",
-                    f"Отчёт сохранён:\n{file_path}"
-                )
+                QMessageBox.information(self, "✅ Успех", f"Отчёт сохранён:\n{file_path}")
 
     def _export_csv(self):
         """Экспорт в CSV"""
@@ -179,7 +207,4 @@ class MaterialsPanel(QWidget):
 
         if file_path:
             if ProjectExporter.to_csv_materials(self.project, file_path):
-                QMessageBox.information(
-                    self, "Успех",
-                    f"CSV сохранён:\n{file_path}"
-                )
+                QMessageBox.information(self, "✅ Успех", f"CSV сохранён:\n{file_path}")

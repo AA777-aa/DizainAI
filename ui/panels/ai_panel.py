@@ -1,11 +1,11 @@
 """
-Панель AI-ассистента для генерации дизайна
+Панель AI-ассистента - современный дизайн
 """
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QTextEdit, QPushButton, QGroupBox,
-    QLineEdit, QProgressBar, QMessageBox, QScrollArea
+    QLineEdit, QProgressBar, QMessageBox, QFrame
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
@@ -30,7 +30,7 @@ class AIWorker(QThread):
 
     def run(self):
         try:
-            self.progress.emit("Генерация дизайна...")
+            self.progress.emit("🎨 Генерация дизайна...")
             result = self.generator.generate_design(
                 self.room,
                 self.style,
@@ -51,14 +51,14 @@ class AIPanel(QWidget):
     """Панель AI дизайнера"""
 
     STYLES = {
-        "scandinavian": "🇸🇪 Скандинавский",
-        "minimalist": "⬜ Минимализм",
-        "modern": "🏢 Современный",
-        "classic": "🏛️ Классический",
-        "loft": "🏭 Лофт",
-        "japandi": "🎌 Джапанди",
-        "provence": "🌻 Прованс",
-        "industrial": "⚙️ Индустриальный"
+        "scandinavian": "🇸🇪  Скандинавский",
+        "minimalist": "⬜  Минимализм",
+        "modern": "🏢  Современный",
+        "classic": "🏛️  Классический",
+        "loft": "🏭  Лофт",
+        "japandi": "🎌  Джапанди",
+        "provence": "🌻  Прованс",
+        "industrial": "⚙️  Индустриальный"
     }
 
     def __init__(self, settings: Settings, project: Project, parent=None):
@@ -75,31 +75,53 @@ class AIPanel(QWidget):
     def _setup_ui(self):
         """Настройка интерфейса"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(15)
 
-        # Статус API
-        self.status_label = QLabel()
+        # === СТАТУС AI ===
+        status_frame = QFrame()
+        status_frame.setStyleSheet("""
+            QFrame {
+                background-color: #1f2937;
+                border-radius: 10px;
+                padding: 15px;
+            }
+        """)
+        status_layout = QHBoxLayout(status_frame)
+
+        self.status_icon = QLabel("🤖")
+        self.status_icon.setStyleSheet("font-size: 24px;")
+        status_layout.addWidget(self.status_icon)
+
+        self.status_label = QLabel("Проверка подключения...")
         self.status_label.setWordWrap(True)
-        layout.addWidget(self.status_label)
+        status_layout.addWidget(self.status_label, 1)
 
-        # Генератор дизайна
-        gen_group = QGroupBox("🎨 Генератор дизайна")
+        layout.addWidget(status_frame)
+
+        # === ГЕНЕРАТОР ДИЗАЙНА ===
+        gen_group = QGroupBox("Генератор дизайна")
         gen_layout = QVBoxLayout(gen_group)
+        gen_layout.setSpacing(12)
 
-        # Выбор комнаты
+        # Комната
         room_layout = QHBoxLayout()
-        room_layout.addWidget(QLabel("Комната:"))
+        room_label = QLabel("Комната:")
+        room_label.setMinimumWidth(90)
         self.room_combo = QComboBox()
-        room_layout.addWidget(self.room_combo)
+        room_layout.addWidget(room_label)
+        room_layout.addWidget(self.room_combo, 1)
         gen_layout.addLayout(room_layout)
 
-        # Выбор стиля
+        # Стиль
         style_layout = QHBoxLayout()
-        style_layout.addWidget(QLabel("Стиль:"))
+        style_label = QLabel("Стиль:")
+        style_label.setMinimumWidth(90)
         self.style_combo = QComboBox()
         for key, name in self.STYLES.items():
             self.style_combo.addItem(name, key)
-        style_layout.addWidget(self.style_combo)
+        style_layout.addWidget(style_label)
+        style_layout.addWidget(self.style_combo, 1)
         gen_layout.addLayout(style_layout)
 
         # Пожелания
@@ -109,7 +131,18 @@ class AIPanel(QWidget):
         gen_layout.addWidget(self.preferences_edit)
 
         # Кнопка генерации
-        self.generate_btn = QPushButton("✨ Сгенерировать дизайн")
+        self.generate_btn = QPushButton("✨  Сгенерировать дизайн")
+        self.generate_btn.setMinimumHeight(50)
+        self.generate_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4f46e5;
+                font-size: 15px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #6366f1;
+            }
+        """)
         self.generate_btn.clicked.connect(self._generate_design)
         gen_layout.addWidget(self.generate_btn)
 
@@ -119,44 +152,45 @@ class AIPanel(QWidget):
         gen_layout.addWidget(self.progress_bar)
 
         self.progress_label = QLabel()
+        self.progress_label.setStyleSheet("color: #94a3b8;")
         self.progress_label.setVisible(False)
         gen_layout.addWidget(self.progress_label)
 
         layout.addWidget(gen_group)
 
-        # Результат
-        result_group = QGroupBox("📝 Результат")
+        # === РЕЗУЛЬТАТ ===
+        result_group = QGroupBox("Результат")
         result_layout = QVBoxLayout(result_group)
 
         self.result_text = QTextEdit()
         self.result_text.setReadOnly(True)
-        self.result_text.setMinimumHeight(200)
+        self.result_text.setMinimumHeight(180)
         self.result_text.setPlaceholderText(
-            "Здесь появится сгенерированный дизайн-проект...\n\n"
-            "1. Выберите комнату\n"
-            "2. Выберите стиль\n"
-            "3. Нажмите 'Сгенерировать'"
+            "🎨 Здесь появится сгенерированный дизайн-проект...\n\n"
+            "Шаги:\n"
+            "1️⃣  Выберите комнату\n"
+            "2️⃣  Выберите стиль\n"
+            "3️⃣  Нажмите «Сгенерировать»"
         )
         result_layout.addWidget(self.result_text)
 
         layout.addWidget(result_group)
 
-        # Чат
-        chat_group = QGroupBox("💬 Чат с AI")
+        # === ЧАТ ===
+        chat_group = QGroupBox("Чат с AI-дизайнером")
         chat_layout = QVBoxLayout(chat_group)
 
         chat_input_layout = QHBoxLayout()
         self.chat_input = QLineEdit()
         self.chat_input.setPlaceholderText("Задайте вопрос AI-дизайнеру...")
         self.chat_input.returnPressed.connect(self._send_chat)
-        chat_input_layout.addWidget(self.chat_input)
+        chat_input_layout.addWidget(self.chat_input, 1)
 
-        send_btn = QPushButton("📤")
+        send_btn = QPushButton("📤 Отправить")
         send_btn.clicked.connect(self._send_chat)
         chat_input_layout.addWidget(send_btn)
 
         chat_layout.addLayout(chat_input_layout)
-
         layout.addWidget(chat_group)
 
         self._update_room_combo()
@@ -168,15 +202,17 @@ class AIPanel(QWidget):
         if api_key:
             self.gpt_client = GPTClient(api_key, self.settings.get("gpt_model", "gpt-4o"))
             self.generator = DesignGenerator(self.gpt_client)
-            self.status_label.setText("✅ AI подключен")
-            self.status_label.setStyleSheet("color: #4CAF50;")
+            self.status_icon.setText("✅")
+            self.status_label.setText("AI подключен и готов к работе")
+            self.status_label.setStyleSheet("color: #10b981; font-weight: bold;")
             self.generate_btn.setEnabled(True)
         else:
+            self.status_icon.setText("⚠️")
             self.status_label.setText(
-                "⚠️ API ключ не настроен.\n"
-                "Перейдите в Настройки → Параметры → AI"
+                "API ключ не настроен\n"
+                "Перейдите: Настройки → Параметры → AI"
             )
-            self.status_label.setStyleSheet("color: #FF9800;")
+            self.status_label.setStyleSheet("color: #f59e0b;")
             self.generate_btn.setEnabled(False)
 
     def update_project(self, project: Project):
@@ -184,27 +220,24 @@ class AIPanel(QWidget):
         self.project = project
         self._update_room_combo()
 
-        if self.generator:
-            self.generator = DesignGenerator(self.gpt_client)
-
     def _update_room_combo(self):
         """Обновить список комнат"""
         self.room_combo.clear()
         for room in self.project.rooms:
-            self.room_combo.addItem(room.name, room.id)
+            self.room_combo.addItem(f"🏠  {room.name}", room.id)
 
     def _generate_design(self):
         """Запустить генерацию дизайна"""
         if not self.generator:
             QMessageBox.warning(
-                self, "Ошибка",
-                "AI не настроен. Укажите API ключ в настройках."
+                self, "AI не настроен",
+                "Укажите API ключ OpenAI в настройках."
             )
             return
 
         if self.room_combo.count() == 0:
             QMessageBox.warning(
-                self, "Ошибка",
+                self, "Нет комнат",
                 "Сначала добавьте комнату в проект."
             )
             return
@@ -221,10 +254,11 @@ class AIPanel(QWidget):
 
         # UI состояние загрузки
         self.generate_btn.setEnabled(False)
+        self.generate_btn.setText("⏳ Генерация...")
         self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)  # Индикатор
+        self.progress_bar.setRange(0, 0)
         self.progress_label.setVisible(True)
-        self.result_text.setText("Генерация...")
+        self.result_text.setText("🎨 Генерация дизайна...")
 
         # Запускаем в фоне
         self.worker = AIWorker(self.generator, room, style, preferences)
@@ -250,6 +284,7 @@ class AIPanel(QWidget):
     def _reset_ui(self):
         """Сбросить UI после генерации"""
         self.generate_btn.setEnabled(True)
+        self.generate_btn.setText("✨  Сгенерировать дизайн")
         self.progress_bar.setVisible(False)
         self.progress_label.setVisible(False)
 
@@ -264,7 +299,7 @@ class AIPanel(QWidget):
             return
 
         self.chat_input.clear()
-        self.result_text.append(f"\n👤 Вы: {message}")
+        self.result_text.append(f"\n\n👤 **Вы:** {message}")
 
         response = self.generator.chat(message, self.project)
-        self.result_text.append(f"\n🤖 AI: {response}")
+        self.result_text.append(f"\n🤖 **AI:** {response}")
