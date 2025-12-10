@@ -242,7 +242,8 @@ class ActionButton(QPushButton):
                 font-size: 13px;
             }
             QPushButton:pressed {
-                transform: scale(0.98);
+                padding-top: 10px;
+                padding-bottom: 6px;
             }
             QPushButton:disabled {
                 opacity: 0.5;
