@@ -4,10 +4,9 @@ SVG Иконки для DizainAI
 """
 
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
-from PyQt5.QtCore import Qt, QSize, QRect
+from PyQt5.QtCore import Qt, QSize, QRectF  # ← Изменено: QRect на QRectF
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QPushButton, QToolButton
-from io import BytesIO
 
 
 class Icons:
@@ -257,7 +256,7 @@ class Icons:
         painter.setRenderHint(QPainter.Antialiasing)
 
         renderer = QSvgRenderer(bytearray(svg_data, encoding='utf-8'))
-        renderer.render(painter, QRect(0, 0, size, size))
+        renderer.render(painter, QRectF(0, 0, size, size))  # ← ИСПРАВЛЕНО: QRectF
 
         painter.end()
 
@@ -281,7 +280,7 @@ class Icons:
         painter.setRenderHint(QPainter.Antialiasing)
 
         renderer = QSvgRenderer(bytearray(svg_data, encoding='utf-8'))
-        renderer.render(painter, QRect(0, 0, size, size))
+        renderer.render(painter, QRectF(0, 0, size, size))  # ← ИСПРАВЛЕНО: QRectF
 
         painter.end()
 
